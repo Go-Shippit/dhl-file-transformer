@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DHL File Transformer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #000000;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.95;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+
+        .upload-section {
+            border: 3px dashed #e0e0e0;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            transition: all 0.3s ease;
+            background: #fafafa;
+        }
+
+        .upload-section.dragover {
+            border-color: #8b5cf6;
+            background: #f0f4ff;
+            transform: scale(1.02);
+        }
+
+        .upload-label {
+            display: inline-block;
+            padding: 12px 30px;
+            background: #8b5cf6;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+        }
+
+        .upload-label:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+            background: #9f7aea;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .file-info {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .file-info.show {
+            display: block;
+        }
+
+        .process-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #48c774 0%, #3ec46d 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+            box-shadow: 0 4px 15px rgba(72, 199, 116, 0.4);
+        }
+
+        .process-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(72, 199, 116, 0.5);
+        }
+
+        .process-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .status-section {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f0f9ff;
+            border-radius: 8px;
+            border-left: 4px solid #3b82f6;
+            display: none;
+        }
+
+        .status-section.show {
+            display: block;
+        }
+
+        .status-section h3 {
+            color: #1e40af;
+            margin-bottom: 10px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .stat-card h4 {
+            color: #8b5cf6;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .stat-card p {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .download-btn {
+            padding: 12px 30px;
+            background: #8b5cf6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+            background: #9f7aea;
+        }
+
+        .error {
+            background: #fee;
+            color: #c00;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-left: 4px solid #c00;
+            display: none;
+        }
+
+        .error.show {
+            display: block;
+        }
+
+        .instructions {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .instructions h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .instructions ol {
+            margin-left: 20px;
+            color: #666;
+            line-height: 1.8;
+        }
+
+        .loader {
+            display: none;
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #8b5cf6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        .loader.show {
+            display: block;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>DHL File Transformer</h1>
+            <p>For use with DHL files for Forever New</p>
+        </div>
+
+        <div class="card">
+            <div class="instructions">
+                <h3>How to Use</h3>
+                <ol>
+                    <li>Ensure the DHL Manhattan report is in Excel or CSV format</li>
+                    <li>Upload the file using the button below or drag & drop</li>
+                    <li>Click "Process File" to convert to Shippit format</li>
+                    <li>Download your converted CSV file</li>
+                </ol>
+            </div>
+
+            <div class="upload-section" id="uploadSection">
+                <div style="font-size: 3rem; margin-bottom: 20px; color: #8b5cf6;">&#8679;</div>
+                <label for="fileInput" class="upload-label">
+                    Choose Excel or CSV File
+                </label>
+                <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
+                <p style="margin-top: 15px; color: #666;">or drag and drop your file here</p>
+            </div>
+
+            <div class="file-info" id="fileInfo">
+                <strong>Selected File:</strong> <span id="fileName"></span><br>
+                <strong>Size:</strong> <span id="fileSize"></span>
+            </div>
+
+            <button class="process-btn" id="processBtn" disabled>Process File</button>
+
+            <div class="loader" id="loader"></div>
+
+            <div class="error" id="errorMsg"></div>
+
+            <div class="status-section" id="statusSection">
+                <h3>Conversion Complete!</h3>
+                <div class="stats">
+                    <div class="stat-card">
+                        <h4>Source Rows</h4>
+                        <p id="sourceRows">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Output Rows</h4>
+                        <p id="outputRows">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Unique Orders</h4>
+                        <p id="uniqueOrders">0</p>
+                    </div>
+                </div>
+                <button class="download-btn" id="downloadBtn">Download Shippit CSV</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let uploadedFile = null;
+        let convertedData = null;
+
+        // State code to full state name mapping
+        const stateMapping = {
+            'NSW': 'New South Wales',
+            'VIC': 'Victoria',
+            'QLD': 'Queensland',
+            'WA': 'Western Australia',
+            'SA': 'South Australia',
+            'TAS': 'Tasmania',
+            'ACT': 'Australian Capital Territory',
+            'NT': 'Northern Territory'
+        };
+
+        // File upload handling
+        const fileInput = document.getElementById('fileInput');
+        const uploadSection = document.getElementById('uploadSection');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const processBtn = document.getElementById('processBtn');
+        const statusSection = document.getElementById('statusSection');
+        const errorMsg = document.getElementById('errorMsg');
+        const loader = document.getElementById('loader');
+
+        // Drag and drop
+        uploadSection.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadSection.classList.add('dragover');
+        });
+
+        uploadSection.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            uploadSection.classList.remove('dragover');
+        });
+
+        uploadSection.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadSection.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileSelect(files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileSelect(e.target.files[0]);
+            }
+        });
+
+        function handleFileSelect(file) {
+            if (!file.name.match(/\.(xlsx|xls|csv)$/i)) {
+                showError('Please select a valid Excel file (.xlsx, .xls) or CSV file (.csv)');
+                return;
+            }
+            uploadedFile = file;
+            fileName.textContent = file.name;
+            fileSize.textContent = formatFileSize(file.size);
+            fileInfo.classList.add('show');
+            processBtn.disabled = false;
+            statusSection.classList.remove('show');
+            errorMsg.classList.remove('show');
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' bytes';
+            else if (bytes < 1048576) return Math.round(bytes / 1024) + ' KB';
+            else return Math.round(bytes / 1048576) + ' MB';
+        }
+
+        function showError(message) {
+            errorMsg.textContent = message;
+            errorMsg.classList.add('show');
+            loader.classList.remove('show');
+        }
+
+        processBtn.addEventListener('click', processFile);
+
+        function processFile() {
+            if (!uploadedFile) return;
+
+            loader.classList.add('show');
+            errorMsg.classList.remove('show');
+            statusSection.classList.remove('show');
+
+            const reader = new FileReader();
+            
+            // Check if it's a CSV file
+            if (uploadedFile.name.toLowerCase().endsWith('.csv')) {
+                reader.onload = function(e) {
+                    try {
+                        const csvText = e.target.result;
+                        processCSVData(csvText);
+                    } catch (error) {
+                        console.error('Error processing CSV file:', error);
+                        showError('Error processing CSV file: ' + error.message);
+                    }
+                };
+                reader.readAsText(uploadedFile);
+            } else {
+                // Excel file processing
+                reader.onload = function(e) {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        
+                        // Find the source sheet (should be first sheet or named appropriately)
+                        let sourceSheet = null;
+                        let sheetName = '';
+                        
+                        // Try to find a sheet with "DHL" or "Manhattan" in the name
+                        for (let name of workbook.SheetNames) {
+                            if (name.toLowerCase().includes('source') || 
+                                name.toLowerCase().includes('dhl') || 
+                                name.toLowerCase().includes('manhattan') ||
+                                workbook.SheetNames.indexOf(name) === 0) { // or just use first sheet
+                                sourceSheet = workbook.Sheets[name];
+                                sheetName = name;
+                                break;
+                            }
+                        }
+                        
+                        if (!sourceSheet) {
+                            throw new Error('Could not find source data sheet');
+                        }
+
+                        // Convert to JSON
+                        const jsonData = XLSX.utils.sheet_to_json(sourceSheet, { header: 1, defval: '' });
+                        processDataArray(jsonData);
+                        
+                    } catch (error) {
+                        console.error('Error processing Excel file:', error);
+                        showError('Error processing Excel file: ' + error.message);
+                    }
+                };
+                reader.readAsArrayBuffer(uploadedFile);
+            }
+        }
+
+        function processCSVData(csvText) {
+            // Parse CSV to 2D array
+            const lines = csvText.split(/\r?\n/);
+            const jsonData = [];
+            
+            for (let line of lines) {
+                if (line.trim() === '') continue;
+                
+                // Simple CSV parsing (handles quoted fields with commas)
+                const row = [];
+                let current = '';
+                let inQuotes = false;
+                
+                for (let i = 0; i < line.length; i++) {
+                    const char = line[i];
+                    const nextChar = line[i + 1];
+                    
+                    if (char === '"') {
+                        if (inQuotes && nextChar === '"') {
+                            current += '"';
+                            i++;
+                        } else {
+                            inQuotes = !inQuotes;
+                        }
+                    } else if (char === ',' && !inQuotes) {
+                        row.push(current);
+                        current = '';
+                    } else {
+                        current += char;
+                    }
+                }
+                row.push(current);
+                jsonData.push(row);
+            }
+            
+            processDataArray(jsonData);
+        }
+
+        function processDataArray(jsonData) {
+            try {
+                // Find the header row (should be row 2, index 2)
+                let headerRowIndex = 2;
+                let headers = jsonData[headerRowIndex];
+                
+                // If headers not found at index 2, search for them
+                if (!headers || !headers.includes('OLPN ID')) {
+                    for (let i = 0; i < Math.min(10, jsonData.length); i++) {
+                        if (jsonData[i].includes('OLPN ID') || jsonData[i].includes('Manhattan Order Number')) {
+                            headerRowIndex = i;
+                            headers = jsonData[i];
+                            break;
+                        }
+                    }
+                }
+                
+                if (!headers) {
+                    throw new Error('Could not find headers in the source file');
+                }
+
+                // Create column index mapping
+                const columnMap = {};
+                headers.forEach((header, index) => {
+                    columnMap[header] = index;
+                });
+
+                // Process data rows
+                const outputRows = [];
+                const dataStartRow = headerRowIndex + 1;
+                
+                for (let i = dataStartRow; i < jsonData.length; i++) {
+                    const row = jsonData[i];
+                    
+                    // Skip empty rows
+                    if (!row || row.every(cell => cell === '')) continue;
+                    
+                    // Skip if no OLPN ID
+                    const olpnId = row[columnMap['OLPN ID']];
+                    if (!olpnId) continue;
+
+                    // Calculate dimensions from volume if available
+                    let length = '', width = '', depth = '';
+                    const volume = row[columnMap['LPN Estimated Volume']] || row[columnMap['LPN Estimated Volume(cm³)']];
+                    if (volume && !isNaN(volume) && volume > 0) {
+                        // Calculate cube root for equal dimensions
+                        const dimension = Math.round(Math.cbrt(volume) * 10) / 10;
+                        length = dimension.toString();
+                        width = dimension.toString();
+                        depth = dimension.toString();
+                    }
+
+                    // Convert state code to full name
+                    const stateCode = row[columnMap['Ship To State']] || '';
+                    const stateName = stateMapping[stateCode.toUpperCase()] || stateCode;
+
+                    // Handle dangerous goods
+                    const productType = row[columnMap['Product Type']] || '';
+                    const dangerousGoodsCode = productType.toUpperCase() === 'DG' ? 'DG' : '';
+
+                    // Create output row
+                    const outputRow = {
+                        'order_id': row[columnMap['Manhattan Order Number']] || '',
+                        'retailer_invoice': olpnId, //flipped order_id and retailer_invoice, as scan to search only works for retailer_invoice
+                        'validate': '',
+                        'suppress_communications': '',
+                        'delivery_instructions': '',
+                        'authority_to_leave': 'Yes',
+                        'courier_type': 'standard',
+                        'courier_allocation': '',
+                        'collection_point_id': '',
+                        'collection_point_name': '',
+                        'delivery_date': '',
+                        'delivery_window': '',
+                        'currency': 'AUD',
+                        'shipping_amount': '',
+                        'cash_on_delivery_amount': '',
+                        'tax_amount': '',
+                        'delivery_company': '',
+                        'delivery_address': row[columnMap['Ship To Address 1']] || '',
+                        'delivery_suburb': row[columnMap['Ship To City']] || '',
+                        'delivery_district_city': '',
+                        'delivery_state': stateName,
+                        'delivery_postcode': row[columnMap['Ship To Postcode']] || '',
+                        'delivery_country': row[columnMap['Ship To Country']] || '',
+                        'receiver_name': row[columnMap['Ship To Customer Name']] || '',
+                        'receiver_contact_number': row[columnMap['Ship To Customer Phone']] || '',
+                        'receiver_language_code': '',
+                        'user_firstname': row[columnMap['Ship To Customer Name']] ||'', //Adib: Dummy Placeholder as mandatory field - need to fix
+                        'user_lastname': row[columnMap['Ship To Customer Name']] ||'', //Adib: Dummy Placeholder as mandatory field - need to fix
+                        'user_email': 'noreply@shippit.com', // Dummy email as required
+                        'customs_duties_amount': '',
+                        'customs_export_reason': '',
+                        'customs_incoterm': '',
+                        'customs_tax_id_type': '',
+                        'customs_tax_id_country_code': '',
+                        'customs_tax_id_number': '',
+                        'customs_recipient_id': '',
+                        'customs_receiver_freight_charge_amount': '',
+                        'customs_documents_require_printing': '',
+                        'line_item_id': '0', //Adib: Dummy Placeholder as mandatory field - need to fix
+                        'sku': row[columnMap['Item']] || '',
+                        'title': row[columnMap['Item Description']] || '',
+                        'weight': row[columnMap['LPN Estimated Weight']] || '',
+                        'length': length/100, //Adib: added /100 as Shippit UI needs cm 
+                        'width': width/100, //Adib: added /100 as Shippit UI needs cm
+                        'depth': depth/100,//Adib: added /100 as Shippit UI needs cm
+                        'qty': row[columnMap['Original Order Quantity']] || '',
+                        'qty_packed': row[columnMap['Packed Quantity']] || '',
+                        'price': '',
+                        'location': '',
+                        'dangerous_goods_code': dangerousGoodsCode,
+                        'dangerous_goods_text': '',
+                        'origin_country_code': '',
+                        'tariff_code': '',
+                        'mid_code': ''
+                    };
+
+                    outputRows.push(outputRow);
+                }
+
+                if (outputRows.length === 0) {
+                    throw new Error('No data rows found to convert');
+                }
+
+                convertedData = outputRows;
+
+                // Update statistics
+                document.getElementById('sourceRows').textContent = jsonData.length - dataStartRow - 1;
+                document.getElementById('outputRows').textContent = outputRows.length;
+                
+                const uniqueOrderIds = new Set(outputRows.map(row => row.order_id));
+                document.getElementById('uniqueOrders').textContent = uniqueOrderIds.size;
+
+                loader.classList.remove('show');
+                statusSection.classList.add('show');
+
+            } catch (error) {
+                console.error('Error processing data:', error);
+                showError('Error processing data: ' + error.message);
+            }
+        }
+
+        document.getElementById('downloadBtn').addEventListener('click', downloadCSV);
+
+        function downloadCSV() {
+            if (!convertedData || convertedData.length === 0) return;
+
+            // Convert to CSV format
+            const headers = Object.keys(convertedData[0]);
+            const csvContent = [
+                headers.join(','),
+                ...convertedData.map(row => 
+                    headers.map(header => {
+                        const value = row[header] || '';
+                        // Escape quotes and wrap in quotes if contains comma or quotes
+                        const escaped = value.toString().replace(/"/g, '""');
+                        return escaped.includes(',') || escaped.includes('"') || escaped.includes('\n') 
+                            ? `"${escaped}"` 
+                            : escaped;
+                    }).join(',')
+                )
+            ].join('\n');
+
+            // Create blob and download
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            
+            // Generate filename with timestamp
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `shippit_import_${timestamp}.csv`);
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>
