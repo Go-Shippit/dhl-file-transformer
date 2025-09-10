@@ -584,7 +584,7 @@
                         'line_item_id': '0', //Adib: Dummy Placeholder as mandatory field - need to fix
                         'sku': row[columnMap['Item']] || '',
                         'title': row[columnMap['Item Description']] || '',
-                        'weight': row[columnMap['LPN Estimated Weight']] || '',
+                        'weight': (row[columnMap['LPN Estimated Weight']]/ row[columnMap['Original Order Quantity']]) || '', //Adib & Alex: added so that the parcel weight in app is right
                         'length': length/100, //Adib: added /100 as Shippit UI needs cm 
                         'width': width/100, //Adib: added /100 as Shippit UI needs cm
                         'depth': depth/100,//Adib: added /100 as Shippit UI needs cm
