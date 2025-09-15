@@ -543,8 +543,8 @@
 
                     // Create output row
                     const outputRow = {
-                        'order_id': olpnId,
-                        'retailer_invoice': row[columnMap['Customer Delivery Number']] || '', //flipped order_id and retailer_invoice, as scan to search only works for retailer_invoice
+                        'order_id': row[columnMap['Customer Delivery Number']] || '',
+                        'retailer_invoice': olpnId, 
                         'validate': '',
                         'suppress_communications': '',
                         'delivery_instructions': '',
