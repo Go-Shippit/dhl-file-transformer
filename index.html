@@ -544,7 +544,7 @@
                     // Create output row
                     const outputRow = {
                         'order_id': row[columnMap['Manhattan Order Number']] || '',
-                        'retailer_invoice': olpnId, //flipped order_id and retailer_invoice, as scan to search only works for retailer_invoice
+                        'retailer_invoice': row[columnMap['Customer Delivery Number']] || '', //flipped order_id and retailer_invoice, as scan to search only works for retailer_invoice
                         'validate': '',
                         'suppress_communications': '',
                         'delivery_instructions': '',
@@ -566,6 +566,7 @@
                         'delivery_state': stateName,
                         'delivery_postcode': row[columnMap['Ship To Postcode']] || '',
                         'delivery_country': row[columnMap['Ship To Country']] || '',
+                        'delivery_instructions': row[columnMap['Customer Order Number']] + ', ' + row[columnMap['Customer Delivery Number']],
                         'receiver_name': row[columnMap['Ship To Customer Name']] || '',
                         'receiver_contact_number': row[columnMap['Ship To Customer Phone']] || '',
                         'receiver_language_code': '',
@@ -584,7 +585,7 @@
                         'line_item_id': '0', //Adib: Dummy Placeholder as mandatory field - need to fix
                         'sku': row[columnMap['Item']] || '',
                         'title': row[columnMap['Item Description']] || '',
-                        'weight': (row[columnMap['LPN Estimated Weight']]/ row[columnMap['Original Order Quantity']]) || '', //Adib & Alex: added so that the parcel weight in app is right
+                        'weight': (row[columnMap['LPN Estimated Weight']] / row[columnMap['Original Order Quantity']]) || '', //Adib & Alex: added so that the parcel weight in app is right
                         'length': length/100, //Adib: added /100 as Shippit UI needs cm 
                         'width': width/100, //Adib: added /100 as Shippit UI needs cm
                         'depth': depth/100,//Adib: added /100 as Shippit UI needs cm
