@@ -543,7 +543,7 @@
 
                     // Create output row
                     const outputRow = {
-                        'order_id': row[columnMap['Customer Delivery Number']] || '',
+                        'order_id': row[columnMap['Customer Delivery Number']] + "__" + olpnId,
                         'retailer_invoice': olpnId, 
                         'validate': '',
                         'suppress_communications': '',
